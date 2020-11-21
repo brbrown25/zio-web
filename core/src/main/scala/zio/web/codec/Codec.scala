@@ -1,10 +1,9 @@
 package zio.web.codec
 
-import zio.blocking.Blocking
-import zio.schema._
-import zio.stream.ZTransducer
+import zio.json.{ JsonDecoder, JsonEncoder }
+import zio.schema.Schema
 
 trait Codec {
-  def encoder[A](schema: Schema[A]): ZTransducer[Blocking, Nothing, A, Byte]
-  def decoder[A](schema: Schema[A]): ZTransducer[Blocking, String, Byte, A]
+  def encoder[A](schema: Schema[A]): JsonEncoder[A]
+  def decoder[A](schema: Schema[A]): JsonDecoder[A]
 }
