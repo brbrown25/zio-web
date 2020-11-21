@@ -1,13 +1,15 @@
 package zio.web.codec
 
 import zio.json.JsonCodec.apply
-import zio.json.JsonEncoder
+import zio.json.{ JsonDecoder, JsonEncoder }
 import zio.stream.ZTransducer
 import zio.web.schema._
 import zio.{ Chunk, ZIO }
 
+// TODO: Should this be a class that takes a character encoding parameter?
 object JsonCodec extends Codec {
-  override def encoder[A](codec: Schema[A]): ZTransducer[Any, Nothing, A, Byte] = codec match {
+
+  override def encoder[A](schema: Schema[A]): ZTransducer[Any, Nothing, A, Byte] = schema match {
     case Schema.Primitive(standardType) => primitiveEncoder(standardType)
     case Schema.Record(_)               => ???
     case Schema.Sequence(elem)          => encoder(elem)
@@ -62,5 +64,50 @@ object JsonCodec extends Codec {
       case StandardType.ZoneOffsetType     => standardEncoder[java.time.ZoneOffset]
     }
 
-  override def decoder[A](codec: Schema[A]): ZTransducer[Any, String, Byte, A] = ???
+  override def decoder[A](schema: Schema[A]): ZTransducer[Any, String, Byte, A] = schema match {
+    case Schema.Primitive(standardType) => primitiveDecoder(standardType)
+    case Schema.Record(_)               => ???
+    case Schema.Sequence(_)             => ???
+    case Schema.Enumeration(_)          => ???
+    case Schema.Transform(_, _, _)      => ???
+    case Schema.Tuple(_, _)             => ???
+    case Schema.Optional(_)             => ???
+  }
+
+  private def primitiveDecoder[A](standardType: StandardType[A]): ZTransducer[Any, String, Byte, A] =
+    standardType match {
+      case StandardType.UnitType           => unitDecoder
+      case StandardType.StringType         => standardDecoder[String]
+      case StandardType.BoolType           => ???
+      case StandardType.ShortType          => ???
+      case StandardType.IntType            => ???
+      case StandardType.LongType           => ???
+      case StandardType.FloatType          => ???
+      case StandardType.DoubleType         => ???
+      case StandardType.ByteType           => ???
+      case StandardType.CharType           => ???
+      case StandardType.DayOfWeekType      => ???
+      case StandardType.DurationType       => ???
+      case StandardType.InstantType        => ???
+      case StandardType.LocalDateType      => ???
+      case StandardType.LocalDateTimeType  => ???
+      case StandardType.LocalTimeType      => ???
+      case StandardType.MonthType          => ???
+      case StandardType.MonthDayType       => ???
+      case StandardType.OffsetDateTimeType => ???
+      case StandardType.OffsetTimeType     => ???
+      case StandardType.PeriodType         => ???
+      case StandardType.YearType           => ???
+      case StandardType.YearMonthType      => ???
+      case StandardType.ZonedDateTimeType  => ???
+      case StandardType.ZoneIdType         => ???
+      case StandardType.ZoneOffsetType     => ???
+    }
+
+  // TODO: Is this correct? Shouldn't it consume nothing?
+  private val unitDecoder: ZTransducer[Any, Nothing, Byte, Unit] =
+    ZTransducer.fromFunction(_ => ())
+
+  private def standardDecoder[A](implicit dec: JsonDecoder[A]): ZTransducer[Any, Nothing, Byte, A] =
+    ???
 }

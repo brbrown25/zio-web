@@ -1,4 +1,3 @@
-import sbtcrossproject.CrossPlugin.autoImport.crossProject
 import BuildHelper._
 
 inThisBuild(
