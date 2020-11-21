@@ -5,6 +5,7 @@ import zio.json.internal.Write
 import zio.schema.StandardType
 
 object CodecEncoder {
+
   final def primitiveEncoder[A](standardType: StandardType[A]): JsonEncoder[A] =
     standardType match {
       case StandardType.UnitType =>
