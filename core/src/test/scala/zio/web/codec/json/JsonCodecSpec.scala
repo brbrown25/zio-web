@@ -1,8 +1,9 @@
 package zio.web.codec.json
 
 import zio.Chunk
-import zio.schema.{ Schema, SchemaGen, StandardType }
-import zio.test.Assertion.equalTo
+import zio.schema.{Schema, SchemaGen, StandardType}
+import zio.stream.ZStream
+import zio.test.Assertion.{equalTo, isUnit, succeeds}
 import zio.test._
 import zio.test.environment.TestEnvironment
 
@@ -21,12 +22,9 @@ object JsonCodecSpec extends DefaultRunnableSpec {
   private val encoderSuite = suite("encoder") {
     suite("primitive") {
       testM("unit") {
-        JsonCodec.encoder(Schema.Primitive(StandardType.UnitType)).push.use { push =>
-          for {
-            part1 <- push(Some(Chunk(())))
-            part2 <- push(None)
-          } yield assert(part1 ++ part2)(equalTo(Chunk.empty))
-        }
+        val schema = Schema.Primitive(StandardType.UnitType)
+        val stream = JsonCodec.encoder(schema).encodeJsonStream((), None).runCollect
+        assertM(stream)(equalTo(Chunk.empty))
       }
     }
   }
@@ -34,11 +32,10 @@ object JsonCodecSpec extends DefaultRunnableSpec {
   private val decoderSuite = suite("decoder") {
     suite("primitive") {
       testM("unit") {
-        JsonCodec.decoder(Schema.Primitive(StandardType.UnitType)).push.use { push =>
-          for {
-            part <- push(None)
-          } yield assert(part)(equalTo(Chunk(())))
-        }
+        val schema = Schema.Primitive(StandardType.UnitType)
+        val stream = ZStream.empty
+        val result = JsonCodec.decoder(schema).decodeJsonStream(stream).run
+        assertM(result)(succeeds(isUnit))
       }
     }
   }
@@ -47,14 +44,9 @@ object JsonCodecSpec extends DefaultRunnableSpec {
     testM("primitive") {
       checkM(SchemaGen.anyPrimitiveAndValue) {
         case (schema, value) =>
-          // TODO: Generate more than one value.
-          val data = Chunk.single(value)
-          (JsonCodec.encoder(schema) >>> JsonCodec.decoder(schema)).push.use { push =>
-            for {
-              part1 <- push(Some(data))
-              part2 <- push(None)
-            } yield assert(part1 ++ part2)(equalTo(data))
-          }
+          val stream = JsonCodec.encoder(schema).encodeJsonStream(value, None)
+          val result = JsonCodec.decoder(schema).decodeJsonStream(stream).run
+          assertM(result)(succeeds(equalTo(value)))
       }
     }
   }
