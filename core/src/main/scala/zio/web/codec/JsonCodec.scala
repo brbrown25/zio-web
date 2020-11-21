@@ -10,11 +10,11 @@ object JsonCodec extends Codec {
   override def encoder[A](codec: Schema[A]): ZTransducer[Any, Nothing, A, Byte] = codec match {
     case Schema.Primitive(standardType) => primitiveEncoder(standardType)
     case Schema.Record(_)               => ???
-    case Schema.Sequence(_)             => ???
+    case Schema.Sequence(elem)          => encoder(elem)
     case Schema.Enumeration(_)          => ???
     case Schema.Transform(_, _, _)      => ???
-    case Schema.Tuple(_, _)             => ???
-    case Schema.Optional(_)             => ???
+    case Schema.Tuple(l, r)             => encoder(l) >>> encoder(r)
+    case Schema.Optional(c)             => encoder(c)
   }
 
   private val unitEncoder: ZTransducer[Any, Nothing, Unit, Nothing] =
