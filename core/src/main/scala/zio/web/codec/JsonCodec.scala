@@ -4,10 +4,10 @@ import java.time.DayOfWeek
 
 import zio.blocking.Blocking
 import zio.json.JsonCodec.apply
-import zio.json.{JsonDecoder, JsonEncoder}
+import zio.json.{ JsonDecoder, JsonEncoder }
 import zio.stream.ZTransducer
 import zio.web.schema._
-import zio.{Chunk, ZIO}
+import zio.{ Chunk, ZIO }
 
 // TODO: Should this be a class that takes a character encoding parameter?
 object JsonCodec extends Codec {
@@ -107,7 +107,6 @@ object JsonCodec extends Codec {
       case StandardType.ZoneOffsetType     => standardDecoder[java.time.ZoneOffset]
     }
 
-  // TODO: Is this correct? If it receives a byte then isn't that byte going to be eaten?
   private val unitDecoder: ZTransducer[Any, Nothing, Byte, Unit] =
     ZTransducer.branchAfter(0)(_ => ZTransducer.fromEffect(ZIO.unit))
 
