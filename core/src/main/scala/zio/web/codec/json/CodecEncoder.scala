@@ -8,10 +8,7 @@ object CodecEncoder {
 
   final def primitiveEncoder[A](standardType: StandardType[A]): JsonEncoder[A] =
     standardType match {
-      case StandardType.UnitType =>
-        new JsonEncoder[A] {
-          override def unsafeEncode(a: A, indent: Option[Int], out: Write): Unit = ()
-        }
+      case StandardType.UnitType           => unitEncoder
       case StandardType.StringType         => JsonEncoder[String]
       case StandardType.BoolType           => JsonEncoder[Boolean]
       case StandardType.ShortType          => JsonEncoder[Short]
@@ -38,4 +35,7 @@ object CodecEncoder {
       case StandardType.ZoneIdType         => JsonEncoder[java.time.ZoneId]
       case StandardType.ZoneOffsetType     => JsonEncoder[java.time.ZoneOffset]
     }
+
+  private val unitEncoder: JsonEncoder[Unit] =
+    (_: Unit, _: Option[Int], _: Write) => ()
 }
