@@ -1,7 +1,7 @@
 package zio.web.codec
 
+import zio.blocking.Blocking
 import zio.schema._
-
 import zio.stream.ZTransducer
 
 trait Codec {

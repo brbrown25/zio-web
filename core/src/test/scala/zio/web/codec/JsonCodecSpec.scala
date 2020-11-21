@@ -4,7 +4,9 @@ import zio.Chunk
 import zio.test.Assertion.equalTo
 import zio.test._
 import zio.test.environment.TestEnvironment
-import zio.web.schema.{ Schema, SchemaGen, StandardType }
+import zio.web.codec.json.JsonCodec
+import zio.schema.{ Schema, StandardType }
+import zio.web.schema.SchemaGen
 
 //TODO encode and decode specs
 object JsonCodecSpec extends DefaultRunnableSpec {

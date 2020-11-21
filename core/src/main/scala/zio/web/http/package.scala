@@ -1,7 +1,7 @@
 package zio.web
 
 package object http extends HttpProtocolModule {
-  val defaultProtocol: codec.Codec = codec.JsonCodec
+  val defaultProtocol: codec.Codec = codec.json.JsonCodec
 
-  val allProtocols: Map[String, codec.Codec] = Map("application/json" -> codec.JsonCodec)
+  val allProtocols: Map[String, codec.Codec] = Map("application/json" -> codec.json.JsonCodec)
 }

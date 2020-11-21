@@ -1,6 +1,7 @@
 package zio.web.schema
 
 import zio.random.Random
+import zio.schema.Schema
 import zio.test.{ Gen, Sized }
 
 object SchemaGen {
