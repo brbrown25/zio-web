@@ -47,6 +47,8 @@ lazy val root = project
   )
   .aggregate(core)
 
+resolvers += Resolver.sonatypeRepo("snapshots")
+
 lazy val core = project
   .in(file("core"))
   .settings(stdSettings("zio-http-core"))
@@ -55,8 +57,7 @@ lazy val core = project
       "dev.zio"        %% "zio"          % zioVersion,
       "dev.zio"        %% "zio-streams"  % zioVersion,
       "dev.zio"        %% "zio-nio"      % zioNioVersion,
-      "dev.zio"        %% "zio-test"     % zioVersion % "Test",
-      "dev.zio"        %% "zio-test-sbt" % zioVersion % "Test",
+      "dev.zio"        %% "zio-json"     % zioJsonVersion,
       "com.propensive" %% "magnolia"     % magnoliaVersion,
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     ),
