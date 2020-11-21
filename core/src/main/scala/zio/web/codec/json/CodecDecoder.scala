@@ -1,11 +1,12 @@
 package zio.web.codec.json
 
 import java.time.DayOfWeek
+
 import zio.ZIO
 import zio.blocking.Blocking
-import zio.json.JsonDecoder
-import zio.stream.ZTransducer
+import zio.json.{ JsonDecoder, JsonStreamDelimiter }
 import zio.schema.StandardType
+import zio.stream.ZTransducer
 
 object CodecDecoder {
   final def primitiveDecoder[A](standardType: StandardType[A]): ZTransducer[Blocking, String, Byte, A] =
@@ -43,6 +44,6 @@ object CodecDecoder {
 
   private def standardDecoder[A](implicit dec: JsonDecoder[A]): ZTransducer[Blocking, String, Byte, A] =
     (ZTransducer.utfDecode.mapChunks(_.flatMap(s => s)) >>>
-      dec.decodeJsonTransducer()).mapError(_.getMessage)
+      dec.decodeJsonTransducer(JsonStreamDelimiter.Newline)).mapError(_.getMessage)
 
 }

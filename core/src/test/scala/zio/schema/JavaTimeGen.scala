@@ -1,4 +1,4 @@
-package zio.web.schema
+package zio.schema
 
 import java.time._
 import java.time.temporal.ChronoField

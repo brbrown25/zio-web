@@ -1,4 +1,4 @@
-package zio.web.schema
+package zio.schema
 
 import zio.random.Random
 import zio.schema.StandardType

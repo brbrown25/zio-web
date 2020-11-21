@@ -1,12 +1,10 @@
-package zio.web.codec
+package zio.web.codec.json
 
 import zio.Chunk
+import zio.schema.{ Schema, SchemaGen, StandardType }
 import zio.test.Assertion.equalTo
 import zio.test._
 import zio.test.environment.TestEnvironment
-import zio.web.codec.json.JsonCodec
-import zio.schema.{ Schema, StandardType }
-import zio.web.schema.SchemaGen
 
 //TODO encode and decode specs
 object JsonCodecSpec extends DefaultRunnableSpec {
@@ -53,11 +51,8 @@ object JsonCodecSpec extends DefaultRunnableSpec {
           val data = Chunk.single(value)
           (JsonCodec.encoder(schema) >>> JsonCodec.decoder(schema)).push.use { push =>
             for {
-              _     <- zio.console.putStrLn(s"value: ${value.toString}")
-              _     <- zio.console.putStrLn(s"data: ${data.toString}")
               part1 <- push(Some(data))
               part2 <- push(None)
-              _     <- zio.console.putStrLn(s"result: ${(part1 ++ part2).toString}")
             } yield assert(part1 ++ part2)(equalTo(data))
           }
       }
