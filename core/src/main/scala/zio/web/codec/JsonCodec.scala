@@ -1,10 +1,13 @@
 package zio.web.codec
 
+import java.time.DayOfWeek
+
+import zio.blocking.Blocking
 import zio.json.JsonCodec.apply
-import zio.json.{ JsonDecoder, JsonEncoder }
+import zio.json.{JsonDecoder, JsonEncoder}
 import zio.stream.ZTransducer
 import zio.web.schema._
-import zio.{ Chunk, ZIO }
+import zio.{Chunk, ZIO}
 
 // TODO: Should this be a class that takes a character encoding parameter?
 object JsonCodec extends Codec {
@@ -30,7 +33,7 @@ object JsonCodec extends Codec {
       .mapChunks(_.flatten)
 
   private def charSequenceToByteChunk(chars: CharSequence): Chunk[Byte] = {
-    val bytes: Seq[Byte] = for (i <- 1 to chars.length) yield chars.charAt(i).toByte
+    val bytes: Seq[Byte] = for (i <- 0 until chars.length) yield chars.charAt(i).toByte
     Chunk.fromIterable(bytes)
   }
 
@@ -64,7 +67,7 @@ object JsonCodec extends Codec {
       case StandardType.ZoneOffsetType     => standardEncoder[java.time.ZoneOffset]
     }
 
-  override def decoder[A](schema: Schema[A]): ZTransducer[Any, String, Byte, A] = schema match {
+  override def decoder[A](schema: Schema[A]): ZTransducer[Blocking, String, Byte, A] = schema match {
     case Schema.Primitive(standardType) => primitiveDecoder(standardType)
     case Schema.Record(_)               => ???
     case Schema.Sequence(_)             => ???
@@ -74,40 +77,41 @@ object JsonCodec extends Codec {
     case Schema.Optional(_)             => ???
   }
 
-  private def primitiveDecoder[A](standardType: StandardType[A]): ZTransducer[Any, String, Byte, A] =
+  private def primitiveDecoder[A](standardType: StandardType[A]): ZTransducer[Blocking, String, Byte, A] =
     standardType match {
       case StandardType.UnitType           => unitDecoder
       case StandardType.StringType         => standardDecoder[String]
-      case StandardType.BoolType           => ???
-      case StandardType.ShortType          => ???
-      case StandardType.IntType            => ???
-      case StandardType.LongType           => ???
-      case StandardType.FloatType          => ???
-      case StandardType.DoubleType         => ???
-      case StandardType.ByteType           => ???
-      case StandardType.CharType           => ???
-      case StandardType.DayOfWeekType      => ???
-      case StandardType.DurationType       => ???
-      case StandardType.InstantType        => ???
-      case StandardType.LocalDateType      => ???
-      case StandardType.LocalDateTimeType  => ???
-      case StandardType.LocalTimeType      => ???
-      case StandardType.MonthType          => ???
-      case StandardType.MonthDayType       => ???
-      case StandardType.OffsetDateTimeType => ???
-      case StandardType.OffsetTimeType     => ???
-      case StandardType.PeriodType         => ???
-      case StandardType.YearType           => ???
-      case StandardType.YearMonthType      => ???
-      case StandardType.ZonedDateTimeType  => ???
-      case StandardType.ZoneIdType         => ???
-      case StandardType.ZoneOffsetType     => ???
+      case StandardType.BoolType           => standardDecoder[Boolean]
+      case StandardType.ShortType          => standardDecoder[Short]
+      case StandardType.IntType            => standardDecoder[Int]
+      case StandardType.LongType           => standardDecoder[Long]
+      case StandardType.FloatType          => standardDecoder[Float]
+      case StandardType.DoubleType         => standardDecoder[Double]
+      case StandardType.ByteType           => standardDecoder[Byte]
+      case StandardType.CharType           => standardDecoder[Char]
+      case StandardType.DayOfWeekType      => standardDecoder[DayOfWeek]
+      case StandardType.DurationType       => standardDecoder[java.time.Duration]
+      case StandardType.InstantType        => standardDecoder[java.time.Instant]
+      case StandardType.LocalDateType      => standardDecoder[java.time.LocalDate]
+      case StandardType.LocalDateTimeType  => standardDecoder[java.time.LocalDateTime]
+      case StandardType.LocalTimeType      => standardDecoder[java.time.LocalTime]
+      case StandardType.MonthType          => standardDecoder[java.time.Month]
+      case StandardType.MonthDayType       => standardDecoder[java.time.MonthDay]
+      case StandardType.OffsetDateTimeType => standardDecoder[java.time.OffsetDateTime]
+      case StandardType.OffsetTimeType     => standardDecoder[java.time.OffsetTime]
+      case StandardType.PeriodType         => standardDecoder[java.time.Period]
+      case StandardType.YearType           => standardDecoder[java.time.Year]
+      case StandardType.YearMonthType      => standardDecoder[java.time.YearMonth]
+      case StandardType.ZonedDateTimeType  => standardDecoder[java.time.ZonedDateTime]
+      case StandardType.ZoneIdType         => standardDecoder[java.time.ZoneId]
+      case StandardType.ZoneOffsetType     => standardDecoder[java.time.ZoneOffset]
     }
 
-  // TODO: Is this correct? Shouldn't it consume nothing?
+  // TODO: Is this correct? If it receives a byte then isn't that byte going to be eaten?
   private val unitDecoder: ZTransducer[Any, Nothing, Byte, Unit] =
-    ZTransducer.fromFunction(_ => ())
+    ZTransducer.branchAfter(0)(_ => ZTransducer.fromEffect(ZIO.unit))
 
-  private def standardDecoder[A](implicit dec: JsonDecoder[A]): ZTransducer[Any, Nothing, Byte, A] =
-    ???
+  private def standardDecoder[A](implicit dec: JsonDecoder[A]): ZTransducer[Blocking, String, Byte, A] =
+    (ZTransducer.utfDecode.mapChunks(_.flatMap(s => s)) >>>
+      dec.decodeJsonTransducer()).mapError(_.getMessage)
 }

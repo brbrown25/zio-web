@@ -4,7 +4,7 @@ import zio.Chunk
 import zio.test.Assertion.equalTo
 import zio.test._
 import zio.test.environment.TestEnvironment
-import zio.web.schema.SchemaGen
+import zio.web.schema.{ Schema, SchemaGen, StandardType }
 
 //TODO encode and decode specs
 object JsonCodecSpec extends DefaultRunnableSpec {
@@ -16,13 +16,34 @@ object JsonCodecSpec extends DefaultRunnableSpec {
     decoderEncoderSuite
   )
 
-  private val encoderSuite = suite("encoder")(
-    )
+  // TODO: Add tests for the transducer contract.
 
-  private val decoderSuite = suite("decoder")(
-    )
+  private val encoderSuite = suite("encoder") {
+    suite("primitive") {
+      testM("unit") {
+        JsonCodec.encoder(Schema.Primitive(StandardType.UnitType)).push.use { push =>
+          for {
+            part1 <- push(Some(Chunk(())))
+            part2 <- push(None)
+          } yield assert(part1 ++ part2)(equalTo(Chunk.empty))
+        }
+      }
+    }
+  }
 
-  private val encoderDecoderSuite = suite("encoder -> decoder")(
+  private val decoderSuite = suite("decoder") {
+    suite("primitive") {
+      testM("unit") {
+        JsonCodec.decoder(Schema.Primitive(StandardType.UnitType)).push.use { push =>
+          for {
+            part <- push(None)
+          } yield assert(part)(equalTo(Chunk(())))
+        }
+      }
+    }
+  }
+
+  private val encoderDecoderSuite = suite("encoder -> decoder") {
     testM("primitive") {
       checkM(SchemaGen.anyPrimitiveAndValue) {
         case (schema, value) =>
@@ -30,13 +51,16 @@ object JsonCodecSpec extends DefaultRunnableSpec {
           val data = Chunk.single(value)
           (JsonCodec.encoder(schema) >>> JsonCodec.decoder(schema)).push.use { push =>
             for {
+              _     <- zio.console.putStrLn(s"value: ${value.toString}")
+              _     <- zio.console.putStrLn(s"data: ${data.toString}")
               part1 <- push(Some(data))
               part2 <- push(None)
+              _     <- zio.console.putStrLn(s"result: ${(part1 ++ part2).toString}")
             } yield assert(part1 ++ part2)(equalTo(data))
           }
       }
     }
-  )
+  }
 
   private val decoderEncoderSuite = suite("decoder -> encoder")(
     )

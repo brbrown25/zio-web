@@ -102,6 +102,8 @@ object JavaTimeGen {
       Gen.fromIterable(ids ++ zoneOffsets)
     }
 
+  // TODO: This needs to be double checked. I have encountered problems generating these in the past.
+  //  See https://github.com/BotTech/scala-hedgehog-spines/blob/master/core/src/main/scala/com/lightbend/hedgehog/generators/time/TimeGenerators.scala
   val anyZonedDateTime: Gen[Random, ZonedDateTime] = anyLocalDateTime.zipWith(anyZoneId) { (dateTime, zone) =>
     ZonedDateTime.of(dateTime, zone)
   }
