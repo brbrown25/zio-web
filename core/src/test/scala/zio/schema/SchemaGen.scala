@@ -178,7 +178,7 @@ object SchemaGen {
 
   // TODO: How do we generate a value of a type that we know nothing about?
   val anyRecordTransformAndGen: Gen[Random with Sized, RecordTransformAndGen[_]] =
-    ???
+    Gen.empty
 //    anyRecordAndGen.map {
 //      case (schema, gen) => transformRecord(schema) -> gen
 //    }
@@ -205,7 +205,7 @@ object SchemaGen {
 
   // TODO: How do we generate a value of a type that we know nothing about?
   val anyEnumerationTransformAndGen: Gen[Random with Sized, EnumerationTransformAndGen[_]] =
-    ???
+    Gen.empty
 //    anyEnumerationAndGen.map {
 //      case (schema, gen) => transformEnumeration(schema) -> gen
 //    }
@@ -261,12 +261,13 @@ object SchemaGen {
   lazy val anySchemaAndGen: Gen[Random with Sized, SchemaAndGen[_]] = {
     Gen.oneOf[Random with Sized, SchemaAndGen[_]](
       anyPrimitiveAndGen,
-      anyOptionalAndGen,
-      anyTupleAndGen,
-      anySequenceAndGen,
-      anyEnumerationAndGen,
-      anyRecordAndGen,
-      anyTransformAndGen
+      // TODO: Add these back in.
+//      anyOptionalAndGen,
+//      anyTupleAndGen,
+//      anySequenceAndGen,
+//      anyEnumerationAndGen,
+//      anyRecordAndGen,
+//      anyTransformAndGen
     )
   }
 

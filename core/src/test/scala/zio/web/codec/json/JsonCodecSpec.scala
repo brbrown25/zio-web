@@ -25,36 +25,30 @@ object JsonCodecSpec extends DefaultRunnableSpec {
   private val encoderSuite = suite("encoder") {
     suite("primitive")(
       testM("unit") {
-        val schema = Schema.Primitive(StandardType.UnitType)
-        val stream = JsonCodec.encoder(schema).encodeJsonStream((), None).runCollect
-        assertM(stream)(equalTo(Chunk.empty))
-      }
+        assertEncodesUnit
+      },
+      suite("string")(
+        testM("example") {
+          assertEncodesString("hello")
+        },
+        testM("any") {
+          checkM(Gen.anyString)(assertEncodesString)
+        }
+      )
     )
   }
 
   private val decoderSuite = suite("decoder") {
     suite("primitive")(
       testM("unit") {
-        val schema = Schema.Primitive(StandardType.UnitType)
-        val stream = ZStream.empty
-        val result = JsonCodec.decoder(schema).decodeJsonStream(stream)
-        assertM(result)(isUnit)
+        assertDecodesUnit
       },
       suite("string")(
         testM("example") {
-          val value  = "hello"
-          val schema = Schema.Primitive(StandardType.StringType)
-          val stream = ZStream(stringify(value): _*)
-          val result = JsonCodec.decoder(schema).decodeJsonStream(stream)
-          assertM(result)(equalTo(value))
+          assertDecodesString("hello")
         },
         testM("any") {
-          checkM(Gen.anyString) { value =>
-            val schema = Schema.Primitive(StandardType.StringType)
-            val stream = ZStream(stringify(value)).mapConcat(s => s)
-            val result = JsonCodec.decoder(schema).decodeJsonStream(stream)
-            assertM(result)(equalTo(value))
-          }
+          checkM(Gen.anyString)(assertDecodesString)
         }
       )
     )
@@ -63,24 +57,60 @@ object JsonCodecSpec extends DefaultRunnableSpec {
   private val encoderDecoderSuite = suite("encoder -> decoder")(
     testM("primitive") {
       checkM(SchemaGen.anyPrimitiveAndValue) {
-        case (schema, value) =>
-          val stream = JsonCodec.encoder(schema).encodeJsonStream(value, None)
-          val result = JsonCodec.decoder(schema).decodeJsonStream(stream)
-          assertM(result)(equalTo(value))
+        case (schema, value) => assertEncodesThenDecodes(schema, value)
       }
     },
     testM("optional") {
       checkM(SchemaGen.anyOptionalAndValue) {
-        case (schema, value) =>
-          val stream = JsonCodec.encoder(schema).encodeJsonStream(value, None)
-          val result = JsonCodec.decoder(schema).decodeJsonStream(stream)
-          assertM(result)(equalTo(value))
+        case (schema, value) => assertEncodesThenDecodes(schema, value)
+      }
+    },
+    testM("any") {
+      checkM(SchemaGen.anySchemaAndValue) {
+        case (schema, value) => assertEncodesThenDecodes(schema, value)
       }
     }
   )
 
   private val decoderEncoderSuite = suite("decoder -> encoder")(
     )
+
+  private def assertEncodesUnit = {
+    val schema = Schema.Primitive(StandardType.UnitType)
+    assertEncodes(schema, (), Chunk.empty)
+  }
+
+  private def assertEncodesString(value: String) = {
+    val schema = Schema.Primitive(StandardType.StringType)
+    assertEncodes(schema, value, Chunk.fromIterable(stringify(value)))
+  }
+
+  private def assertEncodes[A](schema: Schema[A], value: A, chunk: Chunk[Char]) = {
+    val stream = JsonCodec.encoder(schema).encodeJsonStream(value, None).runCollect
+    assertM(stream)(equalTo(chunk))
+  }
+
+  private def assertDecodesUnit = {
+    val schema = Schema.Primitive(StandardType.UnitType)
+    assertDecodes(schema, (), Chunk.empty)
+  }
+
+  private def assertDecodesString(value: String) = {
+    val schema = Schema.Primitive(StandardType.StringType)
+    assertDecodes(schema, value, Chunk.fromIterable(stringify(value)))
+  }
+
+  private def assertDecodes[A](schema: Schema[A], value: A, chunk: Chunk[Char]) = {
+    val stream = ZStream.fromChunk(chunk)
+    val result = JsonCodec.decoder(schema).decodeJsonStream(stream)
+    assertM(result)(equalTo(value))
+  }
+
+  private def assertEncodesThenDecodes[A](schema: Schema[A], value: A) = {
+    val stream = JsonCodec.encoder(schema).encodeJsonStream(value, None)
+    val result = JsonCodec.decoder(schema).decodeJsonStream(stream)
+    assertM(result)(equalTo(value))
+  }
 
   private def stringify(s: String): String = s""""${escape(s)}""""
 
