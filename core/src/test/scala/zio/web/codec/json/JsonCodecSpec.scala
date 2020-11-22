@@ -1,13 +1,15 @@
 package zio.web.codec.json
 
+import java.time.Year
+
 import zio.Chunk
 import zio.duration._
-import zio.schema.{ Schema, SchemaGen, StandardType }
+import zio.schema.{Schema, SchemaGen, StandardType}
 import zio.stream.ZStream
 import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.test.environment.TestEnvironment
-import zio.test.{ testM, _ }
+import zio.test.{testM, _}
 
 //TODO encode and decode specs
 object JsonCodecSpec extends DefaultRunnableSpec {
@@ -22,7 +24,7 @@ object JsonCodecSpec extends DefaultRunnableSpec {
 
   // TODO: Add tests for the transducer contract.
 
-  private val encoderSuite = suite("encoder") {
+  private val encoderSuite = suite("encoder")(
     suite("primitive")(
       testM("unit") {
         assertEncodesUnit
@@ -35,10 +37,15 @@ object JsonCodecSpec extends DefaultRunnableSpec {
           checkM(Gen.anyString)(assertEncodesString)
         }
       )
+    ),
+    suite("optional")(
+      testM("example") {
+        assertEncodesOptionalStringified(Year.of(10000))
+      }
     )
-  }
+  )
 
-  private val decoderSuite = suite("decoder") {
+  private val decoderSuite = suite("decoder")(
     suite("primitive")(
       testM("unit") {
         assertDecodesUnit
@@ -51,8 +58,13 @@ object JsonCodecSpec extends DefaultRunnableSpec {
           checkM(Gen.anyString)(assertDecodesString)
         }
       )
+    ),
+    suite("optional")(
+      testM("example") {
+        assertDecodesOptionalStringified(Year.of(10000))
+      }
     )
-  }
+  )
 
   private val encoderDecoderSuite = suite("encoder -> decoder")(
     testM("primitive") {
@@ -60,11 +72,17 @@ object JsonCodecSpec extends DefaultRunnableSpec {
         case (schema, value) => assertEncodesThenDecodes(schema, value)
       }
     },
-    testM("optional") {
-      checkM(SchemaGen.anyOptionalAndValue) {
-        case (schema, value) => assertEncodesThenDecodes(schema, value)
+    suite("optional")(
+      testM("example") {
+        val schema = Schema.Optional(Schema.Primitive(StandardType.YearType))
+        assertEncodesThenDecodes(schema, Some(Year.of(10000)))
+      },
+      testM("any") {
+        checkM(SchemaGen.anyOptionalAndValue) {
+          case (schema, value) => assertEncodesThenDecodes(schema, value)
+        }
       }
-    },
+    ),
     testM("any") {
       checkM(SchemaGen.anySchemaAndValue) {
         case (schema, value) => assertEncodesThenDecodes(schema, value)
@@ -85,6 +103,11 @@ object JsonCodecSpec extends DefaultRunnableSpec {
     assertEncodes(schema, value, Chunk.fromIterable(stringify(value)))
   }
 
+  private def assertEncodesOptionalStringified[A: StandardType](value: A) = {
+    val schema = Schema.Optional(Schema.Primitive(implicitly[StandardType[A]]))
+    assertEncodes(schema, Some(value), Chunk.fromIterable(stringify(value.toString)))
+  }
+
   private def assertEncodes[A](schema: Schema[A], value: A, chunk: Chunk[Char]) = {
     val stream = JsonCodec.encoder(schema).encodeJsonStream(value, None).runCollect
     assertM(stream)(equalTo(chunk))
@@ -98,6 +121,11 @@ object JsonCodecSpec extends DefaultRunnableSpec {
   private def assertDecodesString(value: String) = {
     val schema = Schema.Primitive(StandardType.StringType)
     assertDecodes(schema, value, Chunk.fromIterable(stringify(value)))
+  }
+
+  private def assertDecodesOptionalStringified[A: StandardType](value: A) = {
+    val schema = Schema.Optional(Schema.Primitive(implicitly[StandardType[A]]))
+    assertDecodes(schema, Some(value), Chunk.fromIterable(stringify(value.toString)))
   }
 
   private def assertDecodes[A](schema: Schema[A], value: A, chunk: Chunk[Char]) = {
