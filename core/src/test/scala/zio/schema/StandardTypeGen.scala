@@ -34,34 +34,36 @@ object StandardTypeGen {
     Gen.const(StandardType.ZoneOffsetType)
   )
 
-  type StandardTypeAndValue[A] = (StandardType[A], A)
+  type StandardTypeAndGen[A] = (StandardType[A], Gen[Random with Sized, A])
 
-  val anyStandardTypeAndValue: Gen[Random with Sized, StandardTypeAndValue[_]] = anyStandardType.flatMap {
-    case typ @ StandardType.UnitType           => Gen.const(typ -> ())
-    case typ @ StandardType.StringType         => Gen.const(typ).zip(Gen.anyString)
-    case typ @ StandardType.BoolType           => Gen.const(typ).zip(Gen.boolean)
-    case typ @ StandardType.ShortType          => Gen.const(typ).zip(Gen.anyShort)
-    case typ @ StandardType.IntType            => Gen.const(typ).zip(Gen.anyInt)
-    case typ @ StandardType.LongType           => Gen.const(typ).zip(Gen.anyLong)
-    case typ @ StandardType.FloatType          => Gen.const(typ).zip(Gen.anyFloat)
-    case typ @ StandardType.DoubleType         => Gen.const(typ).zip(Gen.anyDouble)
-    case typ @ StandardType.ByteType           => Gen.const(typ).zip(Gen.anyByte)
-    case typ @ StandardType.CharType           => Gen.const(typ).zip(Gen.anyChar)
-    case typ @ StandardType.DayOfWeekType      => Gen.const(typ).zip(JavaTimeGen.anyDayOfWeek)
-    case typ @ StandardType.DurationType       => Gen.const(typ).zip(JavaTimeGen.anyDuration)
-    case typ @ StandardType.InstantType        => Gen.const(typ).zip(JavaTimeGen.anyInstant)
-    case typ @ StandardType.LocalDateType      => Gen.const(typ).zip(JavaTimeGen.anyLocalDate)
-    case typ @ StandardType.LocalDateTimeType  => Gen.const(typ).zip(JavaTimeGen.anyLocalDateTime)
-    case typ @ StandardType.LocalTimeType      => Gen.const(typ).zip(JavaTimeGen.anyLocalTime)
-    case typ @ StandardType.MonthType          => Gen.const(typ).zip(JavaTimeGen.anyMonth)
-    case typ @ StandardType.MonthDayType       => Gen.const(typ).zip(JavaTimeGen.anyMonthDay)
-    case typ @ StandardType.OffsetDateTimeType => Gen.const(typ).zip(JavaTimeGen.anyOffsetDateTime)
-    case typ @ StandardType.OffsetTimeType     => Gen.const(typ).zip(JavaTimeGen.anyOffsetTime)
-    case typ @ StandardType.PeriodType         => Gen.const(typ).zip(JavaTimeGen.anyPeriod)
-    case typ @ StandardType.YearType           => Gen.const(typ).zip(JavaTimeGen.anyYear)
-    case typ @ StandardType.YearMonthType      => Gen.const(typ).zip(JavaTimeGen.anyYearMonth)
-    case typ @ StandardType.ZonedDateTimeType  => Gen.const(typ).zip(JavaTimeGen.anyZonedDateTime)
-    case typ @ StandardType.ZoneIdType         => Gen.const(typ).zip(JavaTimeGen.anyZoneId)
-    case typ @ StandardType.ZoneOffsetType     => Gen.const(typ).zip(JavaTimeGen.anyZoneOffset)
+  val anyStandardTypeAndGen: Gen[Random, StandardTypeAndGen[_]] = {
+    anyStandardType.map {
+      case typ @ StandardType.UnitType           => typ -> Gen.unit: StandardTypeAndGen[_]
+      case typ @ StandardType.StringType         => typ -> Gen.anyString
+      case typ @ StandardType.BoolType           => typ -> Gen.boolean
+      case typ @ StandardType.ShortType          => typ -> Gen.anyShort
+      case typ @ StandardType.IntType            => typ -> Gen.anyInt
+      case typ @ StandardType.LongType           => typ -> Gen.anyLong
+      case typ @ StandardType.FloatType          => typ -> Gen.anyFloat
+      case typ @ StandardType.DoubleType         => typ -> Gen.anyDouble
+      case typ @ StandardType.ByteType           => typ -> Gen.anyByte
+      case typ @ StandardType.CharType           => typ -> Gen.anyChar
+      case typ @ StandardType.DayOfWeekType      => typ -> JavaTimeGen.anyDayOfWeek
+      case typ @ StandardType.DurationType       => typ -> JavaTimeGen.anyDuration
+      case typ @ StandardType.InstantType        => typ -> JavaTimeGen.anyInstant
+      case typ @ StandardType.LocalDateType      => typ -> JavaTimeGen.anyLocalDate
+      case typ @ StandardType.LocalDateTimeType  => typ -> JavaTimeGen.anyLocalDateTime
+      case typ @ StandardType.LocalTimeType      => typ -> JavaTimeGen.anyLocalTime
+      case typ @ StandardType.MonthType          => typ -> JavaTimeGen.anyMonth
+      case typ @ StandardType.MonthDayType       => typ -> JavaTimeGen.anyMonthDay
+      case typ @ StandardType.OffsetDateTimeType => typ -> JavaTimeGen.anyOffsetDateTime
+      case typ @ StandardType.OffsetTimeType     => typ -> JavaTimeGen.anyOffsetTime
+      case typ @ StandardType.PeriodType         => typ -> JavaTimeGen.anyPeriod
+      case typ @ StandardType.YearType           => typ -> JavaTimeGen.anyYear
+      case typ @ StandardType.YearMonthType      => typ -> JavaTimeGen.anyYearMonth
+      case typ @ StandardType.ZonedDateTimeType  => typ -> JavaTimeGen.anyZonedDateTime
+      case typ @ StandardType.ZoneIdType         => typ -> JavaTimeGen.anyZoneId
+      case typ @ StandardType.ZoneOffsetType     => typ -> JavaTimeGen.anyZoneOffset
+    }
   }
 }

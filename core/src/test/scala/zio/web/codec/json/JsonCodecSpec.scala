@@ -6,8 +6,8 @@ import zio.schema.{ Schema, SchemaGen, StandardType }
 import zio.stream.ZStream
 import zio.test.Assertion._
 import zio.test.TestAspect._
-import zio.test._
 import zio.test.environment.TestEnvironment
+import zio.test.{ testM, _ }
 
 //TODO encode and decode specs
 object JsonCodecSpec extends DefaultRunnableSpec {
@@ -65,9 +65,15 @@ object JsonCodecSpec extends DefaultRunnableSpec {
       checkM(SchemaGen.anyPrimitiveAndValue) {
         case (schema, value) =>
           val stream = JsonCodec.encoder(schema).encodeJsonStream(value, None)
-          val result = JsonCodec.decoder(schema).decodeJsonStream(stream).flatMap { s =>
-            zio.console.putStrLn(s"${s.getClass}: ${s.toString}").map(_ => s)
-          }
+          val result = JsonCodec.decoder(schema).decodeJsonStream(stream)
+          assertM(result)(equalTo(value))
+      }
+    },
+    testM("optional") {
+      checkM(SchemaGen.anyOptionalAndValue) {
+        case (schema, value) =>
+          val stream = JsonCodec.encoder(schema).encodeJsonStream(value, None)
+          val result = JsonCodec.decoder(schema).decodeJsonStream(stream)
           assertM(result)(equalTo(value))
       }
     }
