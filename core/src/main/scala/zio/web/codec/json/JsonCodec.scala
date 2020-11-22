@@ -8,7 +8,9 @@ import zio.web.codec.Codec
 object JsonCodec extends Codec {
 
   override def encoder[A](schema: Schema[A]): JsonEncoder[A] = schema match {
-    case Schema.Record(_)               => ???
+    case Schema.Record(structure)       =>
+      val keyValueEncoders = structure.view.mapValues(encoder(_)).toMap
+      CodecEncoder.recordEncoder(keyValueEncoders)
     case Schema.Sequence(element)       => JsonEncoder.chunk(encoder(element))
     case Schema.Enumeration(_)          => ???
     case Schema.Transform(_, _, _)      => ???
