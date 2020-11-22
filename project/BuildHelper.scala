@@ -10,7 +10,7 @@ object BuildHelper {
 
   val zioVersion      = "1.0.3"
   val zioNioVersion   = "1.0.0-RC9"
-  val zioJsonVersion  = "0.0.1"
+  val zioJsonVersion  = "0.0.1+4-256d36ef-SNAPSHOT" // FIXME: You'll have to publish this locally for now.
   val silencerVersion = "1.7.1"
   val magnoliaVersion = "0.16.0"
 

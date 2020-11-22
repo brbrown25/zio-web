@@ -1,7 +1,6 @@
 package zio.schema
 
 import zio.random.Random
-import zio.schema.StandardType
 import zio.test.{ Gen, Sized }
 
 object StandardTypeGen {

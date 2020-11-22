@@ -5,7 +5,8 @@ import java.time.temporal.ChronoField
 
 import zio.ZIO
 import zio.random.Random
-import zio.test.Gen
+import zio.stream.ZStream
+import zio.test.{ Gen, Sample }
 
 import scala.jdk.CollectionConverters._
 
@@ -91,16 +92,32 @@ object JavaTimeGen {
     Gen.int(ZoneOffset.MIN.getTotalSeconds, ZoneOffset.MAX.getTotalSeconds).map(ZoneOffset.ofTotalSeconds)
 
   // This uses ZoneRulesProvider which has an effectful static initializer.
-  private val regionZoneIds = ZIO.succeed(ZoneId.getAvailableZoneIds.asScala.map(ZoneId.of))
+  private val regionZoneIds =
+    ZIO.succeed(ZoneId.getAvailableZoneIds.asScala.toSet.map(ZoneId.of))
 
   private val zoneOffsets =
     (ZoneOffset.MIN.getTotalSeconds to ZoneOffset.MAX.getTotalSeconds).map(ZoneOffset.ofTotalSeconds)
 
+  private val zoneIds = regionZoneIds.map(_.toList ++ zoneOffsets)
+
+  // FIXME: Shuffle is really slow.
+  //private val zoneIds =
+  //  for {
+  //    ids      <- regionZoneIds
+  //    all      = ids ++ zoneOffsets
+  //    random   <- ZIO.service[Random.Service]
+  //    shuffled <- random.shuffle(all.toList)
+  //  } yield shuffled
+
   val anyZoneId: Gen[Random, ZoneId] =
-    Gen.fromEffect(regionZoneIds).flatMap { ids =>
-      // TODO: Add a shrinker.
-      Gen.fromIterable(ids ++ zoneOffsets)
-    }
+    Gen(ZStream.fromIterableM(zoneIds).map {
+      case offset: ZoneOffset => Sample.noShrink(offset)
+      // FIXME: This is really slow even when it isn't shrinking.
+      //Sample.shrinkIntegral(ZoneOffset.UTC.getTotalSeconds)(offset.getTotalSeconds).map { seconds =>
+      //  ZoneOffset.ofTotalSeconds(seconds)
+      //}
+      case zone => Sample.noShrink(zone)
+    })
 
   // TODO: This needs to be double checked. I have encountered problems generating these in the past.
   //  See https://github.com/BotTech/scala-hedgehog-spines/blob/master/core/src/main/scala/com/lightbend/hedgehog/generators/time/TimeGenerators.scala
